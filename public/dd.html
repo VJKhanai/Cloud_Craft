@@ -1,0 +1,48 @@
+<table border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
+  <thead style="background-color: #f2f2f2;">
+    <tr>
+      <th>Test Case ID</th>
+      <th>Test Scenario</th>
+      <th>Input</th>
+      <th>Expected Output</th>
+      <th>Pass/Fail Criteria</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>TC01</td>
+      <td>Login using AWS Cognito</td>
+      <td>Valid user credentials</td>
+      <td>User is authenticated and redirected to dashboard</td>
+      <td>Redirects to dashboard after login</td>
+    </tr>
+    <tr>
+      <td>TC02</td>
+      <td>Login with invalid credentials</td>
+      <td>Invalid email/password</td>
+      <td>Login failure message shown</td>
+      <td>Error message is displayed</td>
+    </tr>
+    <tr>
+      <td>TC03</td>
+      <td>Upload valid file</td>
+      <td>PDF, PNG, TXT</td>
+      <td>"File uploaded successfully" alert and file appears in list</td>
+      <td>File is uploaded and visible</td>
+    </tr>
+    <tr>
+      <td>TC04</td>
+      <td>Upload unsupported file type</td>
+      <td>.exe or .bat file</td>
+      <td>Upload blocked, error message shown</td>
+      <td>Error message displayed</td>
+    </tr>
+    <tr>
+      <td>TC05</td>
+      <td>Upload with missing email field</td>
+      <td>File selected but email not passed</td>
+      <td>Upload rejected, error shown</td>
+      <td>Error or alert shown to user</td>
+    </tr>
+  </tbody>
+</table>

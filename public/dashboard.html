@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud Craft Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      background: radial-gradient(circle at 10% 20%, #cce8ff 20%, transparent 40%),
+                  radial-gradient(circle at 90% 20%, #fff7c2 20%, transparent 40%),
+                  radial-gradient(circle at 50% 80%, #ffd8f0 20%, transparent 50%);
+      min-height: 100vh;
+      background-color: #fff;
+      color: #333;
+    }
+
+    #logoutBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #d9534f;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #logoutBtn:hover {
+      background-color: #c9302c;
+    }
+
+    .content {
+      text-align: center;
+      padding-top: 60px;
+    }
+
+    .content h1 {
+      font-size: 2em;
+    }
+
+    .dashboard-cards {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(6px);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      width: 260px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      color: #222;
+    }
+
+    .card p {
+      font-size: 14px;
+      color: #555;
+    }
+
+    #uploadSection, #fileListSection {
+      display: none;
+      margin-top: 30px;
+    }
+
+    form {
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(8px);
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    form input[type="file"] {
+      margin-bottom: 10px;
+    }
+
+    form button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .file-card {
+      background: rgba(255,255,255,0.6);
+      margin: 10px auto;
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 500px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .file-card .actions button {
+      background: transparent;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<button id="logoutBtn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+
+<div class="content">
+  <h1>Welcome, <span id="usernameHighlight">User</span> 👋</h1>
+  <p>This is your personal cloud space. Upload, manage files, or collaborate in the code editor.</p>
+
+  <div class="dashboard-cards">
+    <div class="card" onclick="showSection('upload')">
+      <h3><i class="fas fa-upload"></i> Upload</h3>
+      <p>Store files securely in your personal cloud bucket.</p>
+    </div>
+    <div class="card" onclick="showSection('view')">
+      <h3><i class="fas fa-folder-open"></i> View Files</h3>
+      <p>Preview, download, or delete your uploaded files.</p>
+    </div>
+    <div class="card" onclick="goToEditor()">
+  <h3><i class="fas fa-code"></i> Code Editor</h3>
+  <p>Collaborate in real-time with the Cloud Craft editor.</p>
+</div>
+
+  </div>
+
+  <div id="uploadSection">
+    <h2>Upload File</h2>
+    <form id="uploadForm">
+      <input type="file" name="file" required>
+      <input type="hidden" name="email" id="emailField">
+      <br><button type="submit">Upload</button>
+    </form>
+  </div>
+
+  <div id="fileListSection">
+    <h2>Your Files</h2>
+    <div id="fileList"></div>
+  </div>
+</div>
+
+<script>
+  let userEmail = "";
+
+  async function exchangeCodeForToken() {
+    const code = new URLSearchParams(window.location.search).get("code");
+    if (!code) return;
+    const res = await fetch("http://localhost:3000/exchange", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code })
+    });
+    const data = await res.json();
+    const payload = JSON.parse(atob(data.id_token.split('.')[1]));
+    userEmail = payload.email;
+    document.getElementById("emailField").value = userEmail;
+    document.getElementById("usernameHighlight").innerText = userEmail.split("@")[0];
+    localStorage.setItem("userEmail", userEmail);
+  }
+
+  function logout() {
+    if (confirm("Are you sure you want to logout?")) {
+      const logoutUrl = "https://ap-south-1f76cdp1jn.auth.ap-south-1.amazoncognito.com/logout" +
+        "?client_id=78nvjv889d7jcv8g0pbaaanbhp&logout_uri=http://localhost:3000/index.html";
+      window.location.href = logoutUrl;
+    }
+  }
+
+  function showSection(section) {
+    document.getElementById("uploadSection").style.display = section === 'upload' ? 'block' : 'none';
+    document.getElementById("fileListSection").style.display = section === 'view' ? 'block' : 'none';
+    if (section === 'view') fetchUserFiles(userEmail);
+  }
+
+async function fetchUserFiles(email) {
+  const res = await fetch(`http://localhost:3000/list?email=${encodeURIComponent(email)}`);
+  const data = await res.json();
+  const container = document.getElementById("fileList");
+  container.innerHTML = "";
+
+  if (data.files && data.files.length > 0) {
+    data.files.forEach(file => {
+      const name = file.key.split("/").pop();
+      container.innerHTML += `
+        <div class="file-card">
+          <span>${name}</span>
+          <div class="actions">
+            <a href="${file.url}" target="_blank" title="Preview"><i class="fas fa-eye"></i></a>
+            <a href="${file.url}" download title="Download"><i class="fas fa-download"></i></a>
+            <button onclick="promptRename('${file.key}')"><i class="fas fa-edit" title="Rename"></i></button>
+            <button onclick="deleteFile('${file.key}')"><i class="fas fa-trash" title="Delete"></i></button>
+          </div>
+        </div>`;
+    });
+  } else {
+    container.innerHTML = "<p>No files uploaded yet.</p>";
+  }
+}
+async function promptRename(oldKey) {
+  const currentName = oldKey.split("/").pop();
+  const newName = prompt("Enter a new name (with extension):", currentName);
+
+  if (!newName || newName.trim() === "") return;
+
+  const email = localStorage.getItem("userEmail");
+  const res = await fetch("http://localhost:3000/rename", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, oldKey, newName })
+  });
+
+  const result = await res.json();
+  if (res.ok) {
+    alert("✅ File renamed successfully!");
+    fetchUserFiles(email);
+  } else {
+    alert("❌ Rename failed: " + (result.error || "Unknown error"));
+  }
+}
+
+
+  async function deleteFile(fileKey) {
+    if (!confirm("Delete this file?")) return;
+    const res = await fetch(`/delete?key=${encodeURIComponent(fileKey)}&email=${userEmail}`, {
+      method: "DELETE"
+    });
+    const result = await res.json();
+    if (res.ok) {
+      alert("File deleted.");
+      fetchUserFiles(userEmail);
+    } else {
+      alert("Failed to delete file.");
+    }
+  }
+
+ 
+  document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+
+    try {
+      const res = await fetch("http://localhost:3000/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert("✅ " + result.message + "\n\n📁 File URL:\n" + result.url);
+      } else {
+        alert("❌ Upload failed:\n" + (result.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("❌ Upload failed: file too large limit:2MB");
+    }
+  });
+
+
+  function goToEditor() {
+  const email = localStorage.getItem("userEmail");
+  if (!email) {
+    alert("Please log in again.");
+    return;
+  }
+  window.location.href = `http://localhost:3000/code-editor-dashboard.html?email=${encodeURIComponent(email)}`;
+}
+
+
+  exchangeCodeForToken();
+</script>
+</body>
+</html>

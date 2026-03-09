@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Cloud Craft Code Editor</title>
+  <script src="https://unpkg.com/monaco-editor@0.34.1/min/vs/loader.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #1e1e1e;
+      color: white;
+    }
+
+    #top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #121212;
+    }
+
+    #user-display {
+      font-weight: bold;
+    }
+
+    .button {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      margin-left: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .button:hover {
+      background-color: #0056b3;
+    }
+
+    #editor {
+      height: calc(100vh - 200px);
+      width: 100%;
+    }
+
+    #output {
+      background-color: #111;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      height: 120px;
+      overflow: auto;
+      border-top: 2px solid #333;
+    }
+  </style>
+</head>
+<body>
+  <div id="top-bar">
+    <div>Cloud Craft Code Editor</div>
+    <div>
+      <span id="user-display">Loading...</span>
+      <button class="button" onclick="loadCode()">📂 Load</button>
+      <button class="button" onclick="saveCode()">💾 Save</button>
+      <button class="button" onclick="runCode()">▶️ Run</button>
+      <button class="button" onclick="confirmLogout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <div id="editor"></div>
+  <div id="output">// Output will appear here...</div>
+
+  <script>
+    let socket;
+    let editor;
+
+    require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.34.1/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: "// Welcome to Cloud Craft\nfunction hello() {\n  console.log('Hello, world!');\n}",
+        language: 'javascript',
+        theme: 'vs-dark'
+      });
+
+      socket = io();
+
+      socket.on("init", code => editor.setValue(code));
+      socket.on("code-change", newCode => {
+        if (editor.getValue() !== newCode) editor.setValue(newCode);
+      });
+
+      editor.onDidChangeModelContent(() => {
+        socket.emit("code-change", editor.getValue());
+      });
+    });
+
+    function decodeJWT(token) {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    }
+
+    async function exchangeCodeForToken() {
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (!code) return;
+
+      try {
+        const res = await fetch("/exchange", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        if (data.id_token) {
+          const payload = decodeJWT(data.id_token);
+          localStorage.setItem("userEmail", payload.email);
+          document.getElementById("user-display").innerText = payload.email;
+        } else {
+          alert("Failed to load user info");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("User info load failed");
+      }
+    }
+
+    async function saveCode() {
+      const email = localStorage.getItem("userEmail");
+      if (!email) return alert("User not loaded");
+
+      const code = editor.getValue();
+      try {
+        const res = await fetch("/save-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert("✅ Code saved!");
+        } else {
+          alert("❌ Save failed: " + result.error);
+        }
+      } catch (err) {
+        alert("Error saving code");
+      }
+    }
+
+    async function loadCode() {
+      const email = localStorage.getItem("userEmail");
+      if (!email) return alert("User not loaded");
+
+      try {
+        const res = await fetch(`/load-code?email=${email}`);
+        const text = await res.text();
+        editor.setValue(text || "// No code found.");
+      } catch (err) {
+        alert("Error loading code");
+      }
+    }
+
+    function runCode() {
+      const output = document.getElementById("output");
+      output.innerHTML = "";
+      try {
+        const originalLog = console.log;
+        const logs = [];
+        console.log = (...args) => logs.push(args.join(" "));
+        new Function(editor.getValue())(); // Run user code
+        console.log = originalLog;
+        output.innerText = logs.join("\n") || "✅ Code executed successfully.";
+      } catch (err) {
+        output.innerHTML = `<span style="color:red">❌ ${err.message}</span>`;
+      }
+    }
+
+    function confirmLogout() {
+      if (confirm("Are you sure you want to logout?")) {
+        logout();
+      }
+    }
+
+    function logout() {
+      const domain = "https://ap-south-1f76cdp1jn.auth.ap-south-1.amazoncognito.com";
+      const clientId = "78nvjv889d7jcv8g0pbaaanbhp";
+      const logoutUrl = `${domain}/logout?client_id=${clientId}&logout_uri=http://localhost:3000`;
+      localStorage.clear();
+      window.location.href = logoutUrl;
+    }
+
+    window.onload = () => {
+  const savedEmail = localStorage.getItem("userEmail");
+  if (savedEmail) {
+    document.getElementById("user-display").textContent = savedEmail;
+  } else {
+    exchangeCodeForToken(); // fallback if not available
+  }
+};
+
+  </script>
+</body>
+</html>

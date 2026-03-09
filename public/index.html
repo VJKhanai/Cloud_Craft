@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cloud Craft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      background: #ffffff;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.6;
+      z-index: 0;
+      animation: float 20s ease-in-out infinite alternate;
+    }
+
+    .blob1 {
+      width: 600px;
+      height: 600px;
+      background: #89CFF0;
+      top: -150px;
+      left: -200px;
+    }
+
+    .blob2 {
+      width: 700px;
+      height: 700px;
+      background: #FFF176;
+      top: -200px;
+      right: -250px;
+    }
+
+    .blob3 {
+      width: 500px;
+      height: 500px;
+      background: #FF8AE2;
+      bottom: -180px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(40px); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding-top: 15%;
+      color: #222;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+
+    button {
+      padding: 15px 30px;
+      margin: 15px;
+      font-size: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      cursor: pointer;
+      color: rgb(0, 0, 0);
+      font-weight: bold;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 2em; }
+      button { width: 80%; font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+
+  <div class="container">
+    <h1>Welcome to Cloud Craft ☁️</h1>
+    <p>Select your workspace:</p>
+    <button onclick="login('dashboard.html')">📁 Personal Storage</button>
+    <button onclick="login('code-editor-dashboard.html')">💻 Code Editor</button>
+  </div>
+
+  <script>
+    function login(destination) {
+      const cognitoDomain = "https://ap-south-1f76cdp1jn.auth.ap-south-1.amazoncognito.com";
+      const clientId = "78nvjv889d7jcv8g0pbaaanbhp";
+      const redirectUri = `http://localhost:3000/${destination}`;
+      const encodedRedirectUri = encodeURIComponent(redirectUri);
+
+      const loginUrl = `${cognitoDomain}/login?client_id=${clientId}&response_type=code&scope=email+openid+phone&redirect_uri=${encodedRedirectUri}`;
+      window.location.href = loginUrl;
+    }
+  </script>
+</body>
+</html>

@@ -94,15 +94,7 @@ http://localhost:5500
 
 ---
 
-## 📸 Screenshots
 
-You can add screenshots of:
-- Login Page
-- Dashboard
-- File Upload
-- Code Editor
-
----
 
 ## 🔐 Security Features
 

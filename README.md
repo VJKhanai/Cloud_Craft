@@ -115,9 +115,6 @@ This project was developed as a cloud computing application to demonstrate the i
 Vijay Prakash Khanai  
 MCA Student
 
-Shrinibas Bolgundi  
-MCA Student
-
 ---
 
 ## 📄 License
